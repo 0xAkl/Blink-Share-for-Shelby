@@ -14,7 +14,7 @@
 
 *A trustless Web3 alternative to WeTransfer, built on Shelby Protocol.*
 
-[Live Demo](#) · [Report Bug](../../issues) · [Request Feature](../../issues)
+· [Report Bug](../../issues) · [Request Feature](../../issues)
 
 </div>
 
