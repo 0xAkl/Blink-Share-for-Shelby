@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Blink Share — Decentralized, encrypted, temporary file sharing powered by Shelby Protocol. Your files vanish on schedule. No servers. No trust required."/>
+<title>Blink Share — Trustless File Transfer</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+
+<style>
+/* ============================================================
+   DESIGN TOKENS — LIGHT THEME
+   ============================================================ */
+:root {
+  /* Surfaces */
+  --bg:          #f5f7ff;
+  --bg-nav:      rgba(245, 247, 255, 0.88);
+  --surface-0:   #ffffff;
+  --surface-1:   #f0f3fc;
+  --surface-2:   #e8ecf8;
+  --surface-3:   #dde3f4;
+
+  /* Accents — deep enough for light bg */
+  --teal:        #0891b2;
+  --teal-mid:    #0e7490;
+  --teal-dark:   #164e63;
+  --teal-wash:   rgba(8, 145, 178, 0.08);
+  --teal-soft:   rgba(8, 145, 178, 0.14);
+  --teal-glow:   rgba(8, 145, 178, 0.22);
+
+  --indigo:      #4f46e5;
+  --indigo-mid:  #4338ca;
+  --indigo-wash: rgba(79, 70, 229, 0.08);
+  --indigo-soft: rgba(79, 70, 229, 0.14);
+
+  /* Borders */
+  --border-xs:   rgba(15, 23, 42, 0.06);
+  --border-sm:   rgba(15, 23, 42, 0.10);
+  --border-md:   rgba(15, 23, 42, 0.14);
+  --border-teal: rgba(8, 145, 178, 0.22);
+
+  /* Text */
+  --ink-1:       #0f172a;
+  --ink-2:       #334155;
+  --ink-3:       #64748b;
+  --ink-4:       #94a3b8;
+  --ink-5:       #cbd5e1;
+
+  /* Shadows */
+  --shadow-xs:   0 1px 3px rgba(15,23,42,0.07), 0 1px 2px rgba(15,23,42,0.05);
+  --shadow-sm:   0 2px 8px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.05);
+  --shadow-md:   0 8px 24px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.05);
+  --shadow-lg:   0 16px 48px rgba(15,23,42,0.10), 0 4px 12px rgba(15,23,42,0.06);
+  --shadow-xl:   0 24px 64px rgba(15,23,42,0.12), 0 8px 24px rgba(15,23,42,0.06);
+  --shadow-teal: 0 8px 24px rgba(8,145,178,0.22), 0 2px 8px rgba(8,145,178,0.14);
+
+  /* Typography */
+  --font-display: 'Syne', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+  --font-body:    'DM Sans', sans-serif;
+
+  --section-pad: clamp(80px, 10vw, 130px);
+
+  --r-xs:  6px;
+  --r-sm:  10px;
+  --r-md:  14px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+  --r-2xl: 36px;
+
+  --ease:        cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast:      0.15s;
+  --t-mid:       0.28s;
+  --t-slow:      0.55s;
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  background: var(--bg);
+  color: var(--ink-1);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  cursor: none;
+}
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { cursor: none; font-family: inherit; border: none; background: none; }
+ul { list-style: none; }
+
+/* ============================================================
+   CUSTOM CURSOR
+   ============================================================ */
+#cursor {
+  position: fixed;
+  width: 10px; height: 10px;
+  background: var(--teal);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width .2s var(--ease), height .2s var(--ease), opacity .2s;
+  box-shadow: 0 0 0 2px rgba(8,145,178,0.2);
+  mix-blend-mode: multiply;
+}
+#cursor-ring {
+  position: fixed;
+  width: 32px; height: 32px;
+  border: 1.5px solid rgba(8,145,178,0.35);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width .32s var(--ease), height .32s var(--ease), border-color .25s, opacity .25s;
+}
+body.cursor-hover #cursor { width: 7px; height: 7px; }
+body.cursor-hover #cursor-ring { width: 46px; height: 46px; border-color: rgba(8,145,178,0.5); }
+body.cursor-click #cursor { transform: translate(-50%,-50%) scale(0.65); }
+
+/* ============================================================
+   SCROLL ANIMATIONS
+   ============================================================ */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .65s var(--ease), transform .65s var(--ease); }
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-left  { opacity: 0; transform: translateX(-28px); transition: opacity .65s var(--ease), transform .65s var(--ease); }
+.reveal-right { opacity: 0; transform: translateX(28px);  transition: opacity .65s var(--ease), transform .65s var(--ease); }
+.reveal-left.visible, .reveal-right.visible { opacity: 1; transform: none; }
+.reveal-scale { opacity: 0; transform: scale(0.93); transition: opacity .55s var(--ease), transform .55s var(--ease-spring); }
+.reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+.stagger > *:nth-child(1) { transition-delay: 0s; }
+.stagger > *:nth-child(2) { transition-delay: .07s; }
+.stagger > *:nth-child(3) { transition-delay: .14s; }
+.stagger > *:nth-child(4) { transition-delay: .21s; }
+.stagger > *:nth-child(5) { transition-delay: .28s; }
+.stagger > *:nth-child(6) { transition-delay: .35s; }
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.display-1 { font-family: var(--font-display); font-size: clamp(52px,7vw,96px); font-weight: 800; line-height: .95; letter-spacing: -.03em; }
+.display-2 { font-family: var(--font-display); font-size: clamp(34px,4.5vw,62px); font-weight: 700; line-height: 1.05; letter-spacing: -.025em; }
+.display-3 { font-family: var(--font-display); font-size: clamp(22px,3vw,38px); font-weight: 700; line-height: 1.1; letter-spacing: -.02em; }
+.overline   { font-family: var(--font-mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); }
+.body-lg    { font-size: clamp(16px,1.8vw,19px); line-height: 1.7; color: var(--ink-3); }
+.body-md    { font-size: 15px; line-height: 1.65; color: var(--ink-3); }
+
+.grad-teal   { background: linear-gradient(120deg, var(--teal-dark) 0%, var(--teal) 60%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.grad-indigo { background: linear-gradient(120deg, var(--indigo-mid) 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.grad-mixed  { background: linear-gradient(115deg, var(--teal-dark) 0%, var(--indigo) 55%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px,5vw,60px); }
+.section    { padding: var(--section-pad) 0; position: relative; }
+.divider    { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--border-sm), transparent); }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 24px; border-radius: var(--r-md);
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: .01em;
+  cursor: none; transition: all var(--t-mid) var(--ease);
+  position: relative; overflow: hidden;
+}
+.btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg,rgba(255,255,255,0.18),transparent); opacity: 0; transition: opacity var(--t-fast); }
+.btn:hover::after { opacity: 1; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--teal-mid) 0%, var(--teal) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-teal);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(8,145,178,0.30), 0 4px 12px rgba(8,145,178,0.18); }
+.btn-primary:active { transform: none; }
+
+.btn-ghost {
+  background: var(--surface-0);
+  border: 1.5px solid var(--border-sm);
+  color: var(--ink-2);
+  box-shadow: var(--shadow-xs);
+}
+.btn-ghost:hover { border-color: var(--border-teal); background: var(--surface-0); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.btn-lg { padding: 15px 32px; font-size: 16px; border-radius: var(--r-lg); }
+.btn-sm { padding: 8px 16px; font-size: 13px; border-radius: var(--r-sm); }
+
+/* ============================================================
+   BADGE
+   ============================================================ */
+.badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px 5px 8px; border-radius: 20px;
+  border: 1px solid var(--border-teal);
+  background: var(--teal-wash);
+  font-family: var(--font-mono); font-size: 11px; color: var(--teal-mid); letter-spacing: .05em;
+}
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 2px rgba(8,145,178,0.2); animation: dot-pulse 2s infinite; }
+@keyframes dot-pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card { background: var(--surface-0); border: 1px solid var(--border-xs); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); transition: all var(--t-mid) var(--ease); }
+.card:hover { border-color: var(--border-teal); box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+
+/* ============================================================
+   NAV
+   ============================================================ */
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 0; transition: all .35s var(--ease); }
+nav.scrolled { background: var(--bg-nav); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--border-xs); box-shadow: 0 1px 20px rgba(15,23,42,0.07); }
+.nav-inner { max-width: 1200px; margin: 0 auto; padding: 20px clamp(20px,5vw,60px); display: flex; align-items: center; justify-content: space-between; }
+
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.nav-logo-mark { width: 36px; height: 36px; background: linear-gradient(135deg, var(--teal-mid), var(--teal)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-teal); flex-shrink: 0; }
+.nav-logo-mark svg { width: 18px; height: 18px; }
+.nav-logo-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-1); }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-links a { font-size: 14px; font-weight: 500; color: var(--ink-3); transition: color var(--t-fast); }
+.nav-links a:hover { color: var(--ink-1); }
+.nav-cta { display: flex; align-items: center; gap: 10px; }
+.nav-toggle { display: none; flex-direction: column; gap: 5px; padding: 6px; cursor: none; }
+.nav-toggle span { width: 22px; height: 2px; background: var(--ink-3); border-radius: 2px; }
+@media (max-width: 768px) { .nav-links, .nav-cta { display: none; } .nav-toggle { display: flex; } }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+#hero { min-height: 100vh; display: flex; align-items: center; padding: 120px 0 80px; position: relative; overflow: hidden; }
+#hero-canvas { position: absolute; inset: 0; z-index: 0; }
+
+.hero-bg-grid {
+  position: absolute; inset: 0; z-index: 0;
+  background-image: linear-gradient(var(--border-xs) 1px, transparent 1px), linear-gradient(90deg, var(--border-xs) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%);
+}
+
+.hero-glow {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 45% at 50% -5%, rgba(8,145,178,0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 35% at 85% 60%, rgba(79,70,229,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 5% 80%, rgba(8,145,178,0.06) 0%, transparent 60%);
+}
+
+.hero-content { position: relative; z-index: 2; max-width: 740px; }
+.hero-badge    { margin-bottom: 28px; animation: fadeUp .6s var(--ease) .1s both; }
+.hero-headline { margin-bottom: 22px; animation: fadeUp .6s var(--ease) .2s both; }
+.hero-sub      { max-width: 520px; margin-bottom: 38px; animation: fadeUp .6s var(--ease) .32s both; }
+.hero-actions  { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 60px; animation: fadeUp .6s var(--ease) .42s both; }
+.hero-stats    { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; animation: fadeUp .6s var(--ease) .52s both; }
+.hero-stat     { display: flex; flex-direction: column; gap: 2px; }
+.hero-stat-val { font-family: var(--font-display); font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--ink-1); }
+.hero-stat-lbl { font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); letter-spacing: .1em; text-transform: uppercase; }
+.hero-sep      { width: 1px; height: 30px; background: var(--border-sm); }
+
+.hero-visual {
+  position: absolute; right: -2%; top: 50%; transform: translateY(-50%);
+  width: min(500px, 44vw);
+  animation: slideLeft .9s var(--ease) .5s both;
+  z-index: 2;
+}
+@media (max-width: 1100px) { .hero-visual { display: none; } .hero-content { max-width: 100%; } }
+
+@keyframes fadeUp    { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: none; } }
+@keyframes slideLeft { from { opacity:0; transform: translateY(-50%) translateX(36px); } to { opacity:1; transform: translateY(-50%) translateX(0); } }
+
+/* ============================================================
+   TRUSTED BY
+   ============================================================ */
+#trusted { padding: 52px 0; border-top: 1px solid var(--border-xs); border-bottom: 1px solid var(--border-xs); background: var(--surface-0); overflow: hidden; }
+.trusted-label { text-align: center; font-family: var(--font-mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 28px; }
+.logos-wrap { overflow: hidden; mask-image: linear-gradient(90deg,transparent 0%,black 12%,black 88%,transparent 100%); -webkit-mask-image: linear-gradient(90deg,transparent 0%,black 12%,black 88%,transparent 100%); }
+.logos-track { display: flex; align-items: center; gap: 48px; width: max-content; animation: scroll-logos 24s linear infinite; }
+.logos-track:hover { animation-play-state: paused; }
+.logo-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 20px; border: 1px solid var(--border-xs); border-radius: var(--r-sm);
+  background: var(--bg); font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  color: var(--ink-4); letter-spacing: -.01em; white-space: nowrap; transition: all var(--t-mid);
+}
+.logo-item:hover { color: var(--ink-2); border-color: var(--border-teal); box-shadow: var(--shadow-xs); }
+.logo-icon { font-size: 14px; }
+@keyframes scroll-logos { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ============================================================
+   METRICS
+   ============================================================ */
+.metrics-strip { display: grid; grid-template-columns: repeat(4,1fr); background: var(--surface-0); border: 1px solid var(--border-xs); border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-sm); }
+.metrics-strip + .metrics-strip { border-top: none; }
+.metric-cell { padding: 40px 28px; text-align: center; position: relative; overflow: hidden; border-right: 1px solid var(--border-xs); transition: background var(--t-mid); }
+.metric-cell:last-child { border-right: none; }
+.metric-cell::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,var(--teal-wash),transparent); opacity:0; transition:opacity var(--t-mid); }
+.metric-cell:hover::before { opacity:1; }
+.metric-value { font-family: var(--font-display); font-size: clamp(30px,4vw,46px); font-weight: 800; letter-spacing: -.03em; line-height:1; margin-bottom: 8px; }
+.metric-label { font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); letter-spacing: .13em; text-transform: uppercase; }
+@media (max-width: 768px) { .metrics-strip { grid-template-columns: 1fr 1fr; } .metric-cell { border-bottom: 1px solid var(--border-xs); } }
+@media (max-width: 480px) { .metrics-strip { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   PROBLEM / SOLUTION
+   ============================================================ */
+.problem-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border-xs); border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-sm); position: relative; }
+.problem-cell { padding: 44px 40px; background: var(--surface-0); }
+.problem-cell.solution { background: linear-gradient(135deg, rgba(8,145,178,0.03) 0%, rgba(79,70,229,0.03) 100%); }
+.problem-cell-icon { width: 44px; height: 44px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 20px; }
+.problem-cell-icon.bad  { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.18); }
+.problem-cell-icon.good { background: var(--teal-wash);     border: 1px solid var(--border-teal); }
+.problem-list { display: flex; flex-direction: column; gap: 13px; margin-top: 18px; }
+.problem-item { display: flex; align-items: flex-start; gap: 11px; font-size: 14px; color: var(--ink-3); line-height: 1.55; }
+.problem-dot { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; flex-shrink: 0; margin-top: 2px; }
+.problem-dot.bad  { background: rgba(239,68,68,0.10); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+.problem-dot.good { background: var(--teal-wash); color: var(--teal); border: 1px solid var(--border-teal); }
+.problem-divider { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5; width:42px; height:42px; border-radius:50%; background:var(--surface-0); border:1px solid var(--border-sm); display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--teal); box-shadow:var(--shadow-md); }
+@media (max-width: 768px) { .problem-grid { grid-template-columns: 1fr; } .problem-divider { display: none; } }
+
+/* ============================================================
+   BENTO FEATURE GRID
+   ============================================================ */
+.bento { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.bento-card { background: var(--surface-0); border: 1px solid var(--border-xs); border-radius: var(--r-xl); padding: 30px; position: relative; overflow: hidden; transition: all var(--t-mid) var(--ease); box-shadow: var(--shadow-xs); }
+.bento-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(8,145,178,0.25),transparent); opacity:0; transition:opacity var(--t-mid); }
+.bento-card:hover { border-color: var(--border-teal); box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+.bento-card:hover::before { opacity:1; }
+.bento-card.span-2 { grid-column: span 2; }
+.bento-card.tall   { grid-row: span 2; }
+
+.bento-icon { width: 46px; height: 46px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 21px; margin-bottom: 18px; position: relative; z-index: 1; }
+.bento-icon.teal   { background: var(--teal-wash);    border: 1px solid var(--border-teal); }
+.bento-icon.indigo { background: var(--indigo-wash);  border: 1px solid var(--indigo-soft); }
+.bento-icon.sky    { background: rgba(14,165,233,.08); border: 1px solid rgba(14,165,233,.18); }
+.bento-icon.amber  { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.18); }
+.bento-icon.green  { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.18); }
+.bento-icon.rose   { background: rgba(244,63,94,.07);  border: 1px solid rgba(244,63,94,.16); }
+
+.bento-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -.015em; margin-bottom: 8px; color: var(--ink-1); position: relative; z-index: 1; }
+.bento-desc  { font-size: 14px; color: var(--ink-3); line-height: 1.65; position: relative; z-index: 1; }
+
+.bento-inner-card { margin-top: 20px; padding: 14px 16px; background: var(--surface-1); border: 1px solid var(--border-xs); border-radius: var(--r-md); font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); line-height: 1.75; position: relative; z-index: 1; }
+.bento-inner-card .key { color: var(--teal); }
+.bento-inner-card .val { color: var(--ink-2); }
+.bento-inner-card .str { color: #059669; }
+.bento-inner-card .num { color: #dc2626; }
+.bento-inner-card .cmt { color: var(--ink-4); }
+
+/* mouse-tracking inner glow */
+.bento-glow { position: absolute; width: 200px; height: 200px; border-radius: 50%; filter: blur(50px); opacity: 0; transition: opacity .45s var(--ease); pointer-events: none; background: radial-gradient(circle, rgba(8,145,178,0.12), transparent 70%); }
+.bento-card:hover .bento-glow { opacity: 1; }
+
+@media (max-width: 900px) { .bento { grid-template-columns: 1fr 1fr; } .bento-card.span-2 { grid-column: span 2; } .bento-card.tall { grid-row: auto; } }
+@media (max-width: 560px)  { .bento { grid-template-columns: 1fr; } .bento-card.span-2 { grid-column: span 1; } }
+
+/* ============================================================
+   DEMO SECTION
+   ============================================================ */
+.demo-tabs { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--surface-0); border: 1px solid var(--border-xs); border-radius: var(--r-md); width: fit-content; margin-bottom: 32px; box-shadow: var(--shadow-xs); }
+.demo-tab { padding: 9px 18px; border-radius: var(--r-sm); font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; color: var(--ink-4); cursor: none; transition: all var(--t-fast); border: 1px solid transparent; }
+.demo-tab.active { background: var(--bg); color: var(--ink-1); border-color: var(--border-sm); box-shadow: var(--shadow-xs); }
+.demo-tab:hover:not(.active) { color: var(--ink-2); }
+.demo-panel { display: none; animation: fadeUp .35s var(--ease); }
+.demo-panel.active { display: block; }
+
+.sim-window { background: var(--surface-0); border: 1px solid var(--border-sm); border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-lg); }
+.sim-bar { display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-bottom: 1px solid var(--border-xs); background: var(--surface-1); }
+.sim-dot { width: 10px; height: 10px; border-radius: 50%; }
+.sim-dot-r { background: #ff5f56; } .sim-dot-y { background: #ffbd2e; } .sim-dot-g { background: #27c93f; }
+.sim-title { margin-left: 6px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-4); }
+.sim-body  { padding: 26px; }
+
+.sim-drop { border: 1.5px dashed rgba(8,145,178,0.3); border-radius: var(--r-lg); padding: 36px; text-align: center; background: var(--teal-wash); margin-bottom: 18px; transition: all var(--t-mid); }
+.sim-drop:hover { background: rgba(8,145,178,0.12); border-color: var(--teal); }
+.sim-drop-icon { font-size: 30px; margin-bottom: 10px; }
+.sim-drop-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--ink-1); margin-bottom: 4px; }
+.sim-drop-sub   { font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); }
+
+.progress-track { height: 4px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin: 10px 0; }
+.progress-fill  { height: 100%; background: linear-gradient(90deg, var(--teal-mid), var(--teal)); border-radius: 4px; box-shadow: 0 0 8px rgba(8,145,178,0.3); transition: width .3s var(--ease); }
+
+.link-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--teal-wash); border: 1px solid var(--border-teal); border-radius: var(--r-md); font-family: var(--font-mono); font-size: 11px; color: var(--teal-mid); overflow: hidden; }
+
+.step-row { display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: var(--r-md); margin-bottom: 9px; background: var(--surface-0); border: 1px solid var(--border-xs); box-shadow: var(--shadow-xs); }
+.step-icon  { font-size: 18px; flex-shrink: 0; }
+.step-name  { font-size: 13px; font-weight: 600; color: var(--ink-1); }
+.step-desc  { font-size: 12px; color: var(--ink-4); }
+.step-badge { margin-left: auto; font-family: var(--font-mono); font-size: 10px; white-space: nowrap; flex-shrink: 0; }
+.step-badge.done   { color: var(--teal); }
+.step-badge.active { color: var(--indigo); }
+.step-badge.pend   { color: var(--ink-5); }
+
+/* ============================================================
+   HOW IT WORKS
+   ============================================================ */
+.hiw { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; position: relative; }
+.hiw::before { content:''; position:absolute; top:27px; left:calc(12.5% + 13px); right:calc(12.5% + 13px); height:1px; background:linear-gradient(90deg,var(--teal-soft),var(--indigo-soft),var(--teal-soft)); z-index:0; }
+.hiw-step { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 18px; position: relative; z-index: 1; }
+.hiw-num { width: 54px; height: 54px; border-radius: 50%; border: 1.5px solid var(--border-sm); background: var(--surface-0); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 19px; font-weight: 800; color: var(--ink-3); margin-bottom: 22px; box-shadow: var(--shadow-sm); transition: all var(--t-mid); }
+.hiw-step:hover .hiw-num { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 0 4px var(--teal-wash), var(--shadow-sm); }
+.hiw-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 9px; color: var(--ink-1); }
+.hiw-desc  { font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+@media (max-width: 768px) { .hiw { grid-template-columns: 1fr 1fr; gap: 32px; } .hiw::before { display: none; } }
+@media (max-width: 480px) { .hiw { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   TESTIMONIALS
+   ============================================================ */
+.testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.testi-card { padding: 26px; background: var(--surface-0); border: 1px solid var(--border-xs); border-radius: var(--r-lg); box-shadow: var(--shadow-xs); transition: all var(--t-mid); }
+.testi-card:hover { border-color: var(--border-teal); box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+.testi-stars { color: #f59e0b; font-size: 12px; letter-spacing: 1px; margin-bottom: 12px; }
+.testi-text  { font-size: 14px; color: var(--ink-3); line-height: 1.7; margin-bottom: 18px; font-style: italic; }
+.testi-author { display: flex; align-items: center; gap: 11px; }
+.testi-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.testi-name { font-size: 13px; font-weight: 600; color: var(--ink-1); }
+.testi-role { font-size: 11px; color: var(--ink-4); font-family: var(--font-mono); }
+@media (max-width: 900px) { .testi-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px)  { .testi-grid { grid-template-columns: 1fr; } }
+
+/* ============================================================
+
+/* ============================================================
+   CTA
+   ============================================================ */
+.cta-box {
+  background: var(--surface-0); border: 1px solid var(--border-sm);
+  border-radius: var(--r-2xl); padding: clamp(48px,8vw,96px);
+  text-align: center; position: relative; overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.cta-box::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--teal),var(--indigo),transparent); }
+.cta-top-glow { position:absolute; top:-80px; left:50%; transform:translateX(-50%); width:500px; height:250px; background:radial-gradient(ellipse,rgba(8,145,178,0.08),transparent 70%); pointer-events:none; }
+.cta-trust-row { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 36px; flex-wrap: wrap; }
+.cta-trust-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-4); }
+.cta-trust-item span { color: var(--teal); }
+.trust-sep { width: 1px; height: 14px; background: var(--border-xs); }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer { padding: 56px 0 32px; border-top: 1px solid var(--border-xs); background: var(--surface-0); }
+.footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+.footer-brand { font-family: var(--font-display); font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 11px; color: var(--ink-1); }
+.footer-desc  { font-size: 13px; color: var(--ink-4); line-height: 1.7; max-width: 260px; margin-bottom: 18px; }
+.footer-socials { display: flex; gap: 8px; }
+.social-btn { width: 32px; height: 32px; border: 1px solid var(--border-sm); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--ink-4); background: var(--bg); transition: all var(--t-fast); }
+.social-btn:hover { border-color: var(--border-teal); color: var(--teal); box-shadow: var(--shadow-xs); }
+.footer-col-hd { font-family: var(--font-mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 16px; }
+.footer-links  { display: flex; flex-direction: column; gap: 9px; }
+.footer-links a { font-size: 13px; color: var(--ink-3); transition: color var(--t-fast); }
+.footer-links a:hover { color: var(--ink-1); }
+.footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 22px; border-top: 1px solid var(--border-xs); flex-wrap: wrap; }
+.footer-copy   { font-family: var(--font-mono); font-size: 10px; color: var(--ink-5); letter-spacing: .08em; }
+.footer-status { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); }
+.status-dot    { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.2); }
+@media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px)  { .footer-grid { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   SECTION HEADER
+   ============================================================ */
+.section-hd { text-align: center; margin-bottom: clamp(44px,7vw,76px); }
+.section-hd .overline { margin-bottom: 14px; }
+.section-hd .display-2 { margin-bottom: 14px; }
+.accent-bar { width: 36px; height: 2px; background: linear-gradient(90deg,var(--teal),var(--indigo)); border-radius: 2px; margin: 0 auto 18px; }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.text-center { text-align: center; }
+.code-tag { font-family: var(--font-mono); font-size: 11.5px; background: var(--surface-1); border: 1px solid var(--border-xs); border-radius: 5px; padding: 1px 6px; color: var(--teal-mid); }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- ═══ NAV ═══════════════════════════════════════════════ -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 1L16 5V13L9 17L2 13V5Z" fill="none" stroke="white" stroke-width="1.5"/>
+          <path d="M9 5L13 7.5V12.5L9 15L5 12.5V7.5Z" fill="white"/>
+        </svg>
+      </div>
+      <span class="nav-logo-name">Blink Share</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#">Docs</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="#" class="btn btn-ghost btn-sm">Sign In</a>
+      <a href="#" class="btn btn-primary btn-sm">Get Started</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══════════════════════════════════════════════ -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-bg-grid"></div>
+  <div class="hero-glow"></div>
+
+  <div class="container" style="width:100%;position:relative;z-index:2">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge"><span class="badge-dot"></span>Powered by Shelby Protocol · Aptos Testnet</span>
+      </div>
+
+      <h1 class="display-1 hero-headline">
+        Transfer Files<br/>
+        <span class="grad-teal">Nobody Can</span><br/>
+        <span class="grad-indigo">Trace</span>
+      </h1>
+
+      <p class="body-lg hero-sub">
+        End-to-end encrypted, decentralized, self-expiring file sharing.
+        Expiry enforced by smart contract. Stored on Shelby's distributed hot storage.
+        No servers. No logs. No trust required.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary btn-lg">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor"><path d="M7.5 1L9 5.5H14L10.25 8.25L11.75 12.75L7.5 10L3.25 12.75L4.75 8.25L1 5.5H6L7.5 1z"/></svg>
+          Start Sharing Free
+        </a>
+        <a href="#demo" class="btn btn-ghost btn-lg">
+          View Demo
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7h10M8 3l4 4-4 4"/></svg>
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-val grad-teal">256-bit</span>
+          <span class="hero-stat-lbl">AES Encryption</span>
+        </div>
+        <div class="hero-sep"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-val grad-indigo">0 logs</span>
+          <span class="hero-stat-lbl">Server records</span>
+        </div>
+        <div class="hero-sep"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-val" style="color:var(--ink-1)">30d max</span>
+          <span class="hero-stat-lbl">Auto-expiry</span>
+        </div>
+        <div class="hero-sep"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-val" style="color:var(--ink-1)">3+ nodes</span>
+          <span class="hero-stat-lbl">Shelby replicas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero product preview -->
+    <div class="hero-visual">
+      <div class="sim-window" style="box-shadow:0 24px 80px rgba(15,23,42,0.12),0 0 0 1px rgba(8,145,178,0.10);">
+        <div class="sim-bar">
+          <span class="sim-dot sim-dot-r"></span>
+          <span class="sim-dot sim-dot-y"></span>
+          <span class="sim-dot sim-dot-g"></span>
+          <span class="sim-title">blink-share — upload</span>
+        </div>
+        <div class="sim-body">
+          <div class="sim-drop" style="padding:24px">
+            <div style="font-size:24px;margin-bottom:8px">⬡</div>
+            <div class="sim-drop-title">report-q4-2025.pdf</div>
+            <div class="sim-drop-sub" style="margin-top:3px">8.4 MB · PDF Document</div>
+            <div style="margin-top:12px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4)">Encrypting…</span>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--teal)" id="hero-pct">73%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="hero-bar" style="width:73%"></div></div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div style="padding:11px 13px;border:1px solid var(--border-teal);border-radius:10px;background:var(--teal-wash)">
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px">Expires in</div>
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--teal-mid)">24 hours</div>
+            </div>
+            <div style="padding:11px 13px;border:1px solid var(--border-xs);border-radius:10px;background:var(--surface-1)">
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px">Access</div>
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--indigo)">🔐 Password</div>
+            </div>
+          </div>
+
+          <div class="link-row" style="margin-bottom:12px">
+            <span style="flex-shrink:0;color:var(--teal);opacity:.7">⬡</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">blink.sh/d/0x7f3a…b2c1#K9pXm…</span>
+            <span style="margin-left:auto;flex-shrink:0;font-size:10px;color:var(--ink-4)">Copy</span>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4)">Shelby nodes:</span>
+            <span id="node-1" style="font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:4px;background:var(--teal-wash);color:var(--teal-mid);border:1px solid var(--border-teal);transition:.3s">US-EAST</span>
+            <span id="node-2" style="font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:4px;background:var(--indigo-wash);color:var(--indigo);border:1px solid var(--indigo-soft);transition:.3s">EU-WEST</span>
+            <span id="node-3" style="font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(16,185,129,0.08);color:#059669;border:1px solid rgba(16,185,129,0.18);transition:.3s">APAC</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TRUSTED BY ══════════════════════════════════════════ -->
+<section id="trusted">
+  <div class="container">
+    <p class="trusted-label">Trusted by teams at</p>
+    <div class="logos-wrap">
+      <div class="logos-track">
+        <div class="logo-item"><span class="logo-icon">◆</span> Aptos Labs</div>
+        <div class="logo-item"><span class="logo-icon">⬡</span> Shelby Protocol</div>
+        <div class="logo-item"><span class="logo-icon">▲</span> Vercel</div>
+        <div class="logo-item"><span class="logo-icon">◉</span> Linear</div>
+        <div class="logo-item"><span class="logo-icon">⬢</span> Alchemy</div>
+        <div class="logo-item"><span class="logo-icon">◈</span> Geomi</div>
+        <div class="logo-item"><span class="logo-icon">◇</span> Luma Finance</div>
+        <div class="logo-item"><span class="logo-icon">△</span> Meridian DAO</div>
+        <div class="logo-item"><span class="logo-icon">◆</span> Aptos Labs</div>
+        <div class="logo-item"><span class="logo-icon">⬡</span> Shelby Protocol</div>
+        <div class="logo-item"><span class="logo-icon">▲</span> Vercel</div>
+        <div class="logo-item"><span class="logo-icon">◉</span> Linear</div>
+        <div class="logo-item"><span class="logo-icon">⬢</span> Alchemy</div>
+        <div class="logo-item"><span class="logo-icon">◈</span> Geomi</div>
+        <div class="logo-item"><span class="logo-icon">◇</span> Luma Finance</div>
+        <div class="logo-item"><span class="logo-icon">△</span> Meridian DAO</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ METRICS ═════════════════════════════════════════════ -->
+<section class="section" style="padding-top:72px;padding-bottom:72px">
+  <div class="container">
+    <div class="metrics-strip reveal">
+      <div class="metric-cell">
+        <div class="metric-value grad-teal" data-target="100">0</div>
+        <div class="metric-label">MB max file size</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-value grad-indigo" data-target="256">0</div>
+        <div class="metric-label">Bit AES-GCM encryption</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-value" style="color:var(--ink-1)" data-target="99.9">0</div>
+        <div class="metric-label">% storage uptime</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-value" style="color:var(--ink-1)">∞</div>
+        <div class="metric-label">Central servers (none)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROBLEM → SOLUTION ══════════════════════════════════ -->
+<section class="section" id="problem" style="background:var(--surface-0)">
+  <div class="container">
+    <div class="section-hd">
+      <p class="overline reveal">The problem</p>
+      <h2 class="display-2 reveal" style="transition-delay:.1s">Traditional file sharing<br/><span class="grad-indigo">knows too much</span></h2>
+      <p class="body-lg reveal" style="max-width:500px;margin:0 auto;transition-delay:.2s">Every file you send through centralised services leaves a permanent trail. Blink Share closes that loop entirely.</p>
+    </div>
+
+    <div class="problem-grid reveal" style="position:relative">
+      <div class="problem-divider">→</div>
+      <div class="problem-cell">
+        <div class="problem-cell-icon bad">🚫</div>
+        <h3 class="display-3" style="color:#dc2626">Before Blink Share</h3>
+        <ul class="problem-list">
+          <li class="problem-item"><span class="problem-dot bad">✕</span>Files stored on company servers — employees read your data</li>
+          <li class="problem-item"><span class="problem-dot bad">✕</span>Links never truly expire — copies persist in logs and backups</li>
+          <li class="problem-item"><span class="problem-dot bad">✕</span>No way to verify a file wasn't accessed early or tampered with</li>
+          <li class="problem-item"><span class="problem-dot bad">✕</span>Centralised outages take your transfers down with them</li>
+          <li class="problem-item"><span class="problem-dot bad">✕</span>Ads, tracking pixels, and email harvesting — you are the product</li>
+        </ul>
+      </div>
+      <div class="problem-cell solution">
+        <div class="problem-cell-icon good">⬡</div>
+        <h3 class="display-3 grad-teal">With Blink Share</h3>
+        <ul class="problem-list">
+          <li class="problem-item"><span class="problem-dot good">✓</span>Files encrypted in your browser — no server ever sees plaintext</li>
+          <li class="problem-item"><span class="problem-dot good">✓</span>Expiry enforced on-chain — the smart contract kills the link</li>
+          <li class="problem-item"><span class="problem-dot good">✓</span>Every access event logged on-chain; tamper-proof and auditable</li>
+          <li class="problem-item"><span class="problem-dot good">✓</span>Erasure-coded across Shelby nodes — no single point of failure</li>
+          <li class="problem-item"><span class="problem-dot good">✓</span>Open source, no ads, pay-per-byte only — you are not the product</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES BENTO ══════════════════════════════════════ -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-hd">
+      <div class="accent-bar reveal"></div>
+      <p class="overline reveal">Core features</p>
+      <h2 class="display-2 reveal" style="transition-delay:.1s">Everything you need,<br/><span class="grad-mixed">nothing you don't</span></h2>
+      <p class="body-lg reveal" style="max-width:480px;margin:0 auto;transition-delay:.2s">Six primitives that give you total control over every file you share.</p>
+    </div>
+
+    <div class="bento stagger">
+      <!-- Wide: E2E Encryption -->
+      <div class="bento-card span-2 reveal">
+        <div class="bento-glow"></div>
+        <div class="bento-icon teal">🔐</div>
+        <div class="bento-title">End-to-End Encryption</div>
+        <div class="bento-desc">AES-256-GCM encryption runs entirely in your browser using Web Crypto API. The decryption key lives only in the URL fragment — never transmitted to any server, ever.</div>
+        <div class="bento-inner-card">
+          <div><span class="key">const</span> <span class="val">key</span> = await <span class="str">WebCrypto</span>.generateKey({ name: <span class="str">"AES-GCM"</span>, length: <span class="num">256</span> })</div>
+          <div><span class="key">const</span> <span class="val">enc</span> = await <span class="str">encrypt</span>(file, key) <span class="cmt">// never leaves browser</span></div>
+          <div><span class="key">const</span> <span class="val">url</span> = <span class="str">`/d/${fileId}#${keyFragment}`</span> <span class="cmt">// key in fragment only</span></div>
+        </div>
+      </div>
+
+      <!-- Tall: On-Chain Expiry -->
+      <div class="bento-card tall reveal">
+        <div class="bento-glow" style="background:radial-gradient(circle,rgba(79,70,229,0.10),transparent 70%)"></div>
+        <div class="bento-icon indigo">⏱</div>
+        <div class="bento-title">On-Chain Expiry</div>
+        <div class="bento-desc">Expiration is written to the contract at upload time. Once the timestamp passes, <span class="code-tag">validateAccess()</span> reverts permanently.</div>
+        <div style="margin-top:20px;padding:14px;border:1px solid var(--border-xs);border-radius:12px;background:var(--surface-1)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:7px;align-items:center">
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4)">Time remaining</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--teal-mid)" id="expiry-timer">23:47:12</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:98%;background:linear-gradient(90deg,var(--teal-mid),var(--indigo))"></div></div>
+          <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">
+            <span style="font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:20px;background:var(--teal-wash);border:1px solid var(--border-teal);color:var(--teal-mid)">1h</span>
+            <span style="font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border-xs);color:var(--ink-4)">24h</span>
+            <span style="font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border-xs);color:var(--ink-4)">7d</span>
+            <span style="font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border-xs);color:var(--ink-4)">30d</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Password Protection -->
+      <div class="bento-card reveal">
+        <div class="bento-glow"></div>
+        <div class="bento-icon sky">🛡️</div>
+        <div class="bento-title">Password Protection</div>
+        <div class="bento-desc">Only <span class="code-tag">keccak256(salt, password)</span> is stored on-chain. The plaintext password never touches the blockchain.</div>
+      </div>
+
+      <!-- Wallet Allowlist -->
+      <div class="bento-card reveal">
+        <div class="bento-glow" style="background:radial-gradient(circle,rgba(79,70,229,0.09),transparent 70%)"></div>
+        <div class="bento-icon indigo">👛</div>
+        <div class="bento-title">Wallet Allowlist</div>
+        <div class="bento-desc">Restrict access to specific wallets. Recipients prove ownership via cryptographic signature — no passwords, no friction.</div>
+      </div>
+
+      <!-- Shelby Storage -->
+      <div class="bento-card span-2 reveal">
+        <div class="bento-glow" style="background:radial-gradient(circle,rgba(16,185,129,0.10),transparent 70%)"></div>
+        <div class="bento-icon green">⬡</div>
+        <div class="bento-title">Shelby Distributed Hot Storage</div>
+        <div class="bento-desc">Erasure-coded blobs replicated across 3+ Shelby nodes globally. Geomi API key authentication gives you dedicated node access and higher throughput.</div>
+        <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+          <div style="flex:1;min-width:130px;padding:11px 13px;background:var(--surface-1);border-radius:10px;border:1px solid var(--border-xs)">
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.14em;margin-bottom:5px">US-EAST</div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:#10b981"></div><span style="font-family:var(--font-mono);font-size:11px;color:#059669">Online · 12ms</span></div>
+          </div>
+          <div style="flex:1;min-width:130px;padding:11px 13px;background:var(--surface-1);border-radius:10px;border:1px solid var(--border-xs)">
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.14em;margin-bottom:5px">EU-WEST</div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:#10b981"></div><span style="font-family:var(--font-mono);font-size:11px;color:#059669">Online · 28ms</span></div>
+          </div>
+          <div style="flex:1;min-width:130px;padding:11px 13px;background:var(--surface-1);border-radius:10px;border:1px solid var(--border-xs)">
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.14em;margin-bottom:5px">APAC</div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:#10b981"></div><span style="font-family:var(--font-mono);font-size:11px;color:#059669">Online · 61ms</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- One-Time Links -->
+      <div class="bento-card reveal">
+        <div class="bento-glow" style="background:radial-gradient(circle,rgba(245,158,11,0.09),transparent 70%)"></div>
+        <div class="bento-icon amber">⚡</div>
+        <div class="bento-title">One-Time Links</div>
+        <div class="bento-desc">The contract auto-revokes access after the first successful download — no second chances, no workarounds.</div>
+      </div>
+
+      <!-- Pay per upload -->
+      <div class="bento-card reveal">
+        <div class="bento-glow" style="background:radial-gradient(circle,rgba(244,63,94,0.08),transparent 70%)"></div>
+        <div class="bento-icon rose">💎</div>
+        <div class="bento-title">Pay-Per-Upload</div>
+        <div class="bento-desc">Micro-payment per kilobyte via smart contract. Anti-spam by design — no rate limits needed for legitimate users.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DEMO ═════════════════════════════════════════════════ -->
+<section class="section" id="demo" style="background:var(--surface-0)">
+  <div class="container">
+    <div class="section-hd">
+      <div class="accent-bar reveal"></div>
+      <p class="overline reveal">Product walkthrough</p>
+      <h2 class="display-2 reveal" style="transition-delay:.1s">See it in <span class="grad-teal">action</span></h2>
+      <p class="body-lg reveal" style="max-width:460px;margin:0 auto;transition-delay:.2s">Walk through the full upload-to-download cycle, step by step.</p>
+    </div>
+
+    <div class="reveal">
+      <div class="demo-tabs">
+        <button class="demo-tab active" onclick="switchTab('upload')">↑ Upload</button>
+        <button class="demo-tab" onclick="switchTab('encrypt')">🔐 Encrypt</button>
+        <button class="demo-tab" onclick="switchTab('share')">🔗 Share</button>
+        <button class="demo-tab" onclick="switchTab('download')">↓ Download</button>
+      </div>
+
+      <!-- Upload tab -->
+      <div class="demo-panel active" id="tab-upload">
+        <div class="sim-window">
+          <div class="sim-bar"><span class="sim-dot sim-dot-r"></span><span class="sim-dot sim-dot-y"></span><span class="sim-dot sim-dot-g"></span><span class="sim-title">Step 1 — Select your file</span></div>
+          <div class="sim-body" style="display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start">
+            <div>
+              <div class="sim-drop">
+                <div class="sim-drop-icon">📂</div>
+                <div class="sim-drop-title">Drop any file here</div>
+                <div class="sim-drop-sub">PDF, ZIP, MP4, images — up to 100 MB</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+                <div style="padding:9px 12px;border:1px solid var(--border-teal);border-radius:9px;background:var(--teal-wash);font-family:var(--font-mono);font-size:10px;color:var(--teal-mid);text-align:center">1 hour</div>
+                <div style="padding:9px 12px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1);font-family:var(--font-mono);font-size:10px;color:var(--ink-4);text-align:center">24 hours</div>
+                <div style="padding:9px 12px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1);font-family:var(--font-mono);font-size:10px;color:var(--ink-4);text-align:center">7 days</div>
+                <div style="padding:9px 12px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1);font-family:var(--font-mono);font-size:10px;color:var(--ink-4);text-align:center">Custom</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">Access control</div>
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <label style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border:1px solid var(--border-xs);border-radius:10px;background:var(--surface-0);box-shadow:var(--shadow-xs);cursor:none">
+                  <div><div style="font-size:13px;font-weight:600;color:var(--ink-1)">Password Protection</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4);margin-top:1px">Hash stored on-chain only</div></div>
+                  <div style="width:33px;height:18px;background:var(--teal);border-radius:9px;position:relative;flex-shrink:0"><div style="position:absolute;width:13px;height:13px;background:white;border-radius:50%;top:2.5px;right:2.5px"></div></div>
+                </label>
+                <label style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border:1px solid var(--border-xs);border-radius:10px;background:var(--surface-0);box-shadow:var(--shadow-xs);cursor:none">
+                  <div><div style="font-size:13px;font-weight:600;color:var(--ink-1)">One-Time Link</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4);margin-top:1px">Expires after first download</div></div>
+                  <div style="width:33px;height:18px;background:var(--surface-2);border:1px solid var(--border-sm);border-radius:9px;position:relative;flex-shrink:0"><div style="position:absolute;width:13px;height:13px;background:var(--ink-4);border-radius:50%;top:1.5px;left:1.5px"></div></div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Encrypt tab -->
+      <div class="demo-panel" id="tab-encrypt">
+        <div class="sim-window">
+          <div class="sim-bar"><span class="sim-dot sim-dot-r"></span><span class="sim-dot sim-dot-y"></span><span class="sim-dot sim-dot-g"></span><span class="sim-title">Step 2 — Client-side encryption</span></div>
+          <div class="sim-body">
+            <div class="step-row"><span class="step-icon">🔑</span><div><div class="step-name">Generate AES-256-GCM Key</div><div class="step-desc">WebCrypto API generates a random 256-bit key in-browser</div></div><span class="step-badge done">✓ Done</span></div>
+            <div class="step-row"><span class="step-icon">🔐</span><div><div class="step-name">Encrypt File Buffer</div><div class="step-desc">File encrypted with random IV — server only receives ciphertext</div></div><span class="step-badge done">✓ Done</span></div>
+            <div class="step-row"><span class="step-icon">⬡</span><div><div class="step-name">Register on BlinkShare Contract</div><div class="step-desc">MetaMask signs tx — fileId, expiry, password hash written on-chain</div></div><span class="step-badge active">◉ Signing…</span></div>
+            <div class="step-row" style="opacity:.5"><span class="step-icon">📡</span><div><div class="step-name">Upload to Shelby Nodes</div><div class="step-desc">Encrypted blob pushed to 3+ distributed Shelby nodes</div></div><span class="step-badge pend">— Pending</span></div>
+            <div style="margin-top:14px;padding:11px 14px;background:rgba(79,70,229,0.05);border:1px solid rgba(79,70,229,0.13);border-radius:10px;font-family:var(--font-mono);font-size:11px;color:var(--ink-3)">
+              <span style="color:var(--indigo)">// Key fragment (URL only, never transmitted):</span><br/>
+              K9pXm4QzL1vRfN2sTbH8cYeJ3wA7gD6kMi0uE5oP
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Share tab -->
+      <div class="demo-panel" id="tab-share">
+        <div class="sim-window">
+          <div class="sim-bar"><span class="sim-dot sim-dot-r"></span><span class="sim-dot sim-dot-y"></span><span class="sim-dot sim-dot-g"></span><span class="sim-title">Step 3 — Your shareable link</span></div>
+          <div class="sim-body">
+            <div style="margin-bottom:18px">
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.15em;margin-bottom:7px">Shareable link</div>
+              <div class="link-row">
+                <span style="color:var(--teal);opacity:.7">⬡</span>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">https://blink.sh/d/0x7f3a9c4e…b2c1#K9pXm4QzL1vRf…</span>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4);margin-top:5px"><span style="color:var(--teal-mid)">#fragment</span> = decryption key (never sent to any server)</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+              <div style="padding:13px;text-align:center;border:1px solid var(--border-xs);border-radius:10px;background:var(--surface-1);box-shadow:var(--shadow-xs)"><div style="font-size:18px;margin-bottom:5px">📋</div><div style="font-size:12px;font-weight:600;color:var(--ink-1)">Copy link</div></div>
+              <div style="padding:13px;text-align:center;border:1px solid var(--border-xs);border-radius:10px;background:var(--surface-1);box-shadow:var(--shadow-xs)"><div style="font-size:18px;margin-bottom:5px">📱</div><div style="font-size:12px;font-weight:600;color:var(--ink-1)">QR Code</div></div>
+              <div style="padding:13px;text-align:center;border:1px solid rgba(239,68,68,0.2);border-radius:10px;background:rgba(239,68,68,0.04)"><div style="font-size:18px;margin-bottom:5px">⊘</div><div style="font-size:12px;font-weight:600;color:#dc2626">Revoke</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div style="padding:11px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1)"><div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;margin-bottom:3px">Expires</div><div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--teal-mid)">23:47:12</div></div>
+              <div style="padding:11px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1)"><div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;margin-bottom:3px">Size</div><div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink-1)">8.4 MB</div></div>
+              <div style="padding:11px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1)"><div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);text-transform:uppercase;margin-bottom:3px">Downloads</div><div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--indigo)">0 / ∞</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Download tab -->
+      <div class="demo-panel" id="tab-download">
+        <div class="sim-window">
+          <div class="sim-bar"><span class="sim-dot sim-dot-r"></span><span class="sim-dot sim-dot-y"></span><span class="sim-dot sim-dot-g"></span><span class="sim-title">Step 4 — Recipient downloads</span></div>
+          <div class="sim-body">
+            <div style="text-align:center;padding:18px 0 24px">
+              <div style="width:60px;height:60px;border-radius:var(--r-md);background:var(--teal-wash);border:1px solid var(--border-teal);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px">📄</div>
+              <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--ink-1);margin-bottom:4px">report-q4-2025.pdf</div>
+              <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-4)">8.4 MB · Encrypted · Expires in 23h 47m</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
+              <div style="padding:11px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1)"><div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);margin-bottom:3px">UPLOADED BY</div><div style="font-family:var(--font-mono);font-size:12px;color:var(--ink-1)">0x7f3a…b2c1</div></div>
+              <div style="padding:11px;border:1px solid var(--border-xs);border-radius:9px;background:var(--surface-1)"><div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-4);margin-bottom:3px">CHAIN STATUS</div><div style="font-family:var(--font-mono);font-size:12px;color:#059669">● Active</div></div>
+            </div>
+            <div style="margin-bottom:14px"><div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-4);margin-bottom:5px">Decryption (client-side only)</div><div class="progress-track"><div class="progress-fill" style="width:100%"></div></div></div>
+            <button style="width:100%;padding:13px;background:linear-gradient(135deg,var(--teal-mid),var(--teal));border:none;border-radius:11px;font-family:var(--font-display);font-size:15px;font-weight:700;color:#fff;cursor:none;box-shadow:var(--shadow-teal)">↓ Download &amp; Decrypt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ════════════════════════════════════════ -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="section-hd">
+      <div class="accent-bar reveal"></div>
+      <p class="overline reveal">Simple by design</p>
+      <h2 class="display-2 reveal" style="transition-delay:.1s">Four steps to <span class="grad-indigo">total privacy</span></h2>
+    </div>
+    <div class="hiw stagger">
+      <div class="hiw-step reveal"><div class="hiw-num">01</div><div class="hiw-title">Connect Wallet</div><p class="hiw-desc">Link MetaMask or any compatible wallet. No email, no sign-up, no verification required.</p></div>
+      <div class="hiw-step reveal"><div class="hiw-num">02</div><div class="hiw-title">Drop Your File</div><p class="hiw-desc">Select any file up to 100 MB. Set expiry, toggle password protection, choose access rules.</p></div>
+      <div class="hiw-step reveal"><div class="hiw-num">03</div><div class="hiw-title">Sign &amp; Upload</div><p class="hiw-desc">Browser encrypts the file, wallet signs the contract tx, ciphertext goes to Shelby nodes.</p></div>
+      <div class="hiw-step reveal"><div class="hiw-num">04</div><div class="hiw-title">Share the Link</div><p class="hiw-desc">The decryption key lives in the URL fragment. Recipients decrypt entirely in their browser.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ════════════════════════════════════════ -->
+<section class="section" style="background:var(--surface-0)">
+  <div class="container">
+    <div class="section-hd">
+      <div class="accent-bar reveal"></div>
+      <p class="overline reveal">From the community</p>
+      <h2 class="display-2 reveal" style="transition-delay:.1s">Teams who <span class="grad-teal">trust nothing</span></h2>
+    </div>
+    <div class="testi-grid stagger">
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"We replaced an enterprise file transfer tool that cost $800/mo. Blink Share handles our legal document exchanges with better security guarantees and zero trust assumptions."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#0891b2,#4f46e5)">SL</div>
+          <div><div class="testi-name">Sofia L.</div><div class="testi-role">General Counsel · Meridian DAO</div></div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"The URL-fragment key trick is elegant. The key is literally never transmitted to any server. I've audited the code — this is how all file sharing should work."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#0891b2,#7c3aed)">AK</div>
+          <div><div class="testi-name">Arjun K.</div><div class="testi-role">Security Researcher · Alchemy</div></div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Set it to one-time download, send it to a client, and know for certain the link can never be reused. On-chain enforcement makes this a completely different category."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#7c3aed,#db2777)">MR</div>
+          <div><div class="testi-name">Maya R.</div><div class="testi-role">Founder · Luma Finance</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══════════════════════════════════════════════════ -->
+<section class="section" style="background:var(--bg)">
+  <div class="container">
+    <div class="cta-box reveal">
+      <div class="cta-top-glow"></div>
+      <p class="overline" style="margin-bottom:16px">Start today</p>
+      <h2 class="display-2" style="margin-bottom:16px">Your files deserve<br/><span class="grad-mixed">better than trust</span></h2>
+      <p class="body-lg" style="max-width:460px;margin:0 auto 36px">Stop hoping your file host keeps your data private. Start knowing it's cryptographically impossible for them to read it.</p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
+        <a href="#" class="btn btn-primary btn-lg" style="box-shadow:0 8px 28px rgba(8,145,178,0.28)">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor"><path d="M7.5 1L9 5.5H14L10.25 8.25L11.75 12.75L7.5 10L3.25 12.75L4.75 8.25L1 5.5H6L7.5 1z"/></svg>
+          Launch App — It's Free
+        </a>
+        <a href="#" class="btn btn-ghost btn-lg">
+          Read the Docs
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7h10M8 3l4 4-4 4"/></svg>
+        </a>
+      </div>
+      <div class="cta-trust-row">
+        <div class="cta-trust-item"><span>✓</span> No credit card</div>
+        <div class="trust-sep"></div>
+        <div class="cta-trust-item"><span>✓</span> Open source</div>
+        <div class="trust-sep"></div>
+        <div class="cta-trust-item"><span>✓</span> Testnet-ready</div>
+        <div class="trust-sep"></div>
+        <div class="cta-trust-item"><span>✓</span> Deploy in 5 minutes</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,var(--teal-mid),var(--teal));border-radius:7px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-teal);flex-shrink:0">
+            <svg width="13" height="13" viewBox="0 0 18 18" fill="none"><path d="M9 1L16 5V13L9 17L2 13V5Z" fill="none" stroke="white" stroke-width="1.5"/><path d="M9 5L13 7.5V12.5L9 15L5 12.5V7.5Z" fill="white"/></svg>
+          </div>
+          Blink Share
+        </div>
+        <p class="footer-desc">Decentralized, encrypted, temporary file sharing. Powered by Shelby Protocol on Aptos. Zero trust. Zero servers. Zero logs.</p>
+        <div class="footer-socials">
+          <a href="#" class="social-btn">𝕏</a>
+          <a href="#" class="social-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg></a>
+          <a href="#" class="social-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.128 18.112a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-hd">Product</div>
+        <ul class="footer-links"><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">Changelog</a></li><li><a href="#">Roadmap</a></li><li><a href="#">Status</a></li></ul>
+      </div>
+      <div>
+        <div class="footer-col-hd">Developers</div>
+        <ul class="footer-links"><li><a href="#">Documentation</a></li><li><a href="#">GitHub</a></li><li><a href="#">Contract Source</a></li><li><a href="#">SDK Reference</a></li><li><a href="#">Shelby Docs</a></li></ul>
+      </div>
+      <div>
+        <div class="footer-col-hd">Company</div>
+        <ul class="footer-links"><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Security</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Contact</a></li></ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2025 BLINK SHARE · BUILT ON SHELBY PROTOCOL · APTOS TESTNET</span>
+      <div class="footer-status"><div class="status-dot"></div>ALL SYSTEMS OPERATIONAL</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ JAVASCRIPT ════════════════════════════════════════════ -->
+<script>
+/* ── Cursor ─────────────────────────────────────────────── */
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+});
+(function lerpRing() {
+  rx += (mx - rx) * 0.11; ry += (my - ry) * 0.11;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(lerpRing);
+})();
+document.querySelectorAll('a,button,[onclick],.bento-card,.testi-card').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+});
+document.addEventListener('mousedown', () => document.body.classList.add('cursor-click'));
+document.addEventListener('mouseup',   () => document.body.classList.remove('cursor-click'));
+
+/* ── Navbar scroll ──────────────────────────────────────── */
+window.addEventListener('scroll', () =>
+  document.getElementById('nav').classList.toggle('scrolled', scrollY > 40)
+);
+
+/* ── Scroll reveal ──────────────────────────────────────── */
+new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.07, rootMargin: '0px 0px -36px 0px' })
+.observe = (() => {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.07, rootMargin: '0px 0px -36px 0px' });
+  document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(el => obs.observe(el));
+  return obs.observe.bind(obs);
+})();
+
+/* ── Hero canvas ────────────────────────────────────────── */
+(function() {
+  const cv = document.getElementById('hero-canvas');
+  const cx = cv.getContext('2d');
+  let W, H;
+  const resize = () => { W = cv.width = cv.offsetWidth; H = cv.height = cv.offsetHeight; };
+  window.addEventListener('resize', resize); resize();
+
+  const N = 50;
+  const pts = Array.from({length:N}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()-.5)*.32, vy: (Math.random()-.5)*.32,
+    r: Math.random()*1.4+.5, ph: Math.random()*Math.PI*2
+  }));
+
+  let t = 0;
+  function frame() {
+    cx.clearRect(0,0,W,H);
+    t += .012;
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+    });
+    // connections
+    for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) {
+      const dx = pts[i].x-pts[j].x, dy = pts[i].y-pts[j].y;
+      const d  = Math.sqrt(dx*dx+dy*dy);
+      if (d < 120) {
+        const a = (1-d/120)*0.12;
+        cx.strokeStyle = (i+j)%3 ? `rgba(8,145,178,${a})` : `rgba(79,70,229,${a*.7})`;
+        cx.lineWidth = .7;
+        cx.beginPath(); cx.moveTo(pts[i].x,pts[i].y); cx.lineTo(pts[j].x,pts[j].y); cx.stroke();
+      }
+    }
+    // nodes
+    pts.forEach((p,i) => {
+      const pulse = .5+.5*Math.sin(t*1.1+p.ph);
+      const a = .18 + .22*pulse;
+      cx.beginPath(); cx.arc(p.x,p.y,p.r*(0.9+.25*pulse),0,Math.PI*2);
+      cx.fillStyle = i%3 ? `rgba(8,145,178,${a})` : `rgba(79,70,229,${a})`;
+      cx.fill();
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ── Hero progress bar ──────────────────────────────────── */
+(function() {
+  const bar = document.getElementById('hero-bar');
+  const pct = document.getElementById('hero-pct');
+  if (!bar) return;
+  let v = 65, dir = 1;
+  setInterval(() => {
+    v += dir*(Math.random()*1.1+.3);
+    if (v >= 100) { v = 100; dir = -1; setTimeout(()=>{ v=0; dir=1; },1200); }
+    bar.style.width = v+'%'; pct.textContent = Math.round(v)+'%';
+  }, 80);
+})();
+
+/* ── Node pulse ─────────────────────────────────────────── */
+(function() {
+  const ids = ['node-1','node-2','node-3'];
+  let i = 0;
+  setInterval(() => {
+    ids.forEach((id,idx) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.opacity = idx===i ? '1' : '.4';
+      el.style.transform = idx===i ? 'scale(1.08)' : 'scale(1)';
+    });
+    i = (i+1)%3;
+  }, 1600);
+})();
+
+/* ── Expiry countdown ───────────────────────────────────── */
+(function() {
+  const el = document.getElementById('expiry-timer');
+  if (!el) return;
+  let s = 23*3600+47*60+12;
+  setInterval(() => {
+    s--; if (s<0) s=86400;
+    el.textContent = [Math.floor(s/3600), Math.floor((s%3600)/60), s%60].map(n=>String(n).padStart(2,'0')).join(':');
+  }, 1000);
+})();
+
+/* ── Demo tabs ──────────────────────────────────────────── */
+function switchTab(name) {
+  const tabs = ['upload','encrypt','share','download'];
+  document.querySelectorAll('.demo-tab').forEach((t,i) => t.classList.toggle('active', tabs[i]===name));
+  document.querySelectorAll('.demo-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('tab-'+name);
+  if (panel) panel.classList.add('active');
+}
+
+/* ── Count-up ───────────────────────────────────────────── */
+new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target, target = parseFloat(el.dataset.target);
+    if (isNaN(target)) return;
+    const isFloat = String(target).includes('.');
+    let cur = 0; const step = target/55;
+    const t = setInterval(() => {
+      cur += step; if (cur >= target) { cur=target; clearInterval(t); }
+      el.textContent = isFloat ? cur.toFixed(1) : Math.floor(cur);
+    }, 18);
+    countObs.unobserve(el);
+  });
+}, {threshold:.4});
+const countObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target, target = parseFloat(el.dataset.target);
+    if (isNaN(target)) return;
+    const isFloat = String(target).includes('.');
+    let cur = 0; const step = target/55;
+    const tmr = setInterval(() => {
+      cur += step; if (cur >= target) { cur=target; clearInterval(tmr); }
+      el.textContent = isFloat ? cur.toFixed(1) : Math.floor(cur);
+    }, 18);
+    countObs.unobserve(el);
+  });
+}, {threshold:.4});
+document.querySelectorAll('[data-target]').forEach(el => countObs.observe(el));
+
+/* ── Bento mouse-track glow ─────────────────────────────── */
+document.querySelectorAll('.bento-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const g = card.querySelector('.bento-glow');
+    if (g) { g.style.left = (e.clientX-r.left-100)+'px'; g.style.top = (e.clientY-r.top-100)+'px'; }
+  });
+});
+
+/* ── Hero visual parallax ───────────────────────────────── */
+document.addEventListener('mousemove', e => {
+  const v = document.getElementById('hero-visual');
+  if (!v) return;
+  const dx = (e.clientX - innerWidth/2)  / (innerWidth/2);
+  const dy = (e.clientY - innerHeight/2) / (innerHeight/2);
+  v.style.transform = `translateY(-50%) translateX(${dx*-8}px) rotateY(${dx*-2.5}deg) rotateX(${dy*1.8}deg)`;
+});
+</script>
+</body>
+</html>
