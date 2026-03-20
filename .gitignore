@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment — NEVER commit secrets
+.env
+.env.local
+.env.*.local
+
+# Hardhat build artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Contract deployment output (auto-generated)
+backend/src/contract.json
+frontend/src/contracts/
+
+# Coverage
+coverage/
+coverage.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+out/
+
+# Misc
+.eslintcache
+*.tsbuildinfo
